@@ -51,7 +51,6 @@ class CreatePageState extends State<CreatePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -61,7 +60,6 @@ class CreatePageState extends State<CreatePage> {
                 labelStyle: TextStyle(color: Colors.white, fontSize: 25),
               ),
             ),
-            const SizedBox(height: 20),
             TextFormField(
               controller: _passwordController,
               keyboardType: TextInputType.text,
@@ -72,7 +70,7 @@ class CreatePageState extends State<CreatePage> {
                 labelStyle: TextStyle(color: Colors.white, fontSize: 25),
               ),
             ),
-            const SizedBox(height: 20),
+
             _criar(context), // Chamando o método _criar
             const SizedBox(height: 20),
             ElevatedButton(

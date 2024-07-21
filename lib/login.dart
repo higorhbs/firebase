@@ -53,44 +53,54 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Colors.white, fontSize: 30),
-              decoration: const InputDecoration(
-                labelText: "Email",
-                labelStyle: TextStyle(color: Colors.white, fontSize: 25),
+            Padding(
+              padding: const EdgeInsets.only(top: 20.0),
+              child: TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(color: Colors.white, fontSize: 30),
+                decoration: const InputDecoration(
+                  labelText: "Email",
+                  labelStyle: TextStyle(color: Colors.white, fontSize: 25),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _passwordController,
-              keyboardType: TextInputType.text,
-              obscureText: true,
-              style: const TextStyle(color: Colors.white, fontSize: 40),
-              decoration: const InputDecoration(
-                labelText: "Senha",
-                labelStyle: const TextStyle(color: Colors.white, fontSize: 25),
+            Padding(
+              padding: const EdgeInsets.only(top: 20.0),
+              child: TextFormField(
+                controller: _passwordController,
+                keyboardType: TextInputType.text,
+                obscureText: true,
+                style: const TextStyle(color: Colors.white, fontSize: 40),
+                decoration: const InputDecoration(
+                  labelText: "Senha",
+                  labelStyle: TextStyle(color: Colors.white, fontSize: 25),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            _logar(context), // Chamando o método _logar
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 60),
-                elevation: 0,
-              ),
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  PageTransition(
-                      child: const CreatePage(), type: PageTransitionType.fade),
-                );
-              },
-              child: const Text(
-                "Criar conta",
+            Padding(
+              padding: const EdgeInsets.only(top: 20.0),
+              child: _logar(context),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 20.0),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 60),
+                  elevation: 0,
+                ),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    PageTransition(
+                      child: const CreatePage(),
+                      type: PageTransitionType.fade,
+                    ),
+                  );
+                },
+                child: const Text(
+                  "Criar conta",
+                ),
               ),
             ),
           ],
