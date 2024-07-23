@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class Logou extends StatefulWidget {
   const Logou({Key? key}) : super(key: key);
@@ -13,14 +16,78 @@ class Logou extends StatefulWidget {
 class _LogouState extends State<Logou> {
   final FirebaseFirestore db = FirebaseFirestore.instance;
   final TextEditingController _messageController = TextEditingController();
+  String _userMessage = '';
+  String _userPhotoUrl = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      String email = FirebaseAuth.instance.currentUser?.email ?? 'unknown';
+      DocumentSnapshot userDoc =
+          await db.collection('usuarios').doc(email).get();
+      setState(() {
+        _userMessage = userDoc['Mensagem'] ?? '';
+        _userPhotoUrl = userDoc['photoUrl'] ?? '';
+      });
+    } catch (e) {
+      print("Erro ao carregar dados do usuário: $e");
+    }
+  }
+
+  Future<void> _uploadPhoto() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      File file = File(pickedFile.path);
+      try {
+        String email = FirebaseAuth.instance.currentUser?.email ?? 'unknown';
+        String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+        Reference storageReference =
+            FirebaseStorage.instance.ref().child('$email/$fileName');
+
+        // Iniciar o upload
+        UploadTask uploadTask = storageReference.putFile(file);
+
+        // Aguarde a conclusão do upload
+        await uploadTask.whenComplete(() async {
+          try {
+            // Obtenha a URL do arquivo após o upload
+            String photoUrl = await storageReference.getDownloadURL();
+            await db.collection('usuarios').doc(email).update({
+              'photoUrl': photoUrl, // Atualize apenas o campo 'photoUrl'
+            });
+            setState(() {
+              _userPhotoUrl = photoUrl;
+            });
+
+            // Exibir a mensagem de sucesso no centro da tela
+            _showCenterMessage('Imagem enviada com sucesso!');
+          } catch (e) {
+            print("Erro ao obter URL da imagem: $e");
+          }
+        });
+      } catch (e) {
+        print("Erro ao enviar imagem: $e");
+      }
+    } else {
+      print('Nenhuma imagem selecionada');
+    }
+  }
 
   Future<void> _updateUserMessage(String message) async {
     try {
-      await db
-          .collection('usuarios')
-          .doc('${FirebaseAuth.instance.currentUser?.email}')
-          .update({
-        'Mensagem': message,
+      String email = FirebaseAuth.instance.currentUser?.email ?? 'unknown';
+      await db.collection('usuarios').doc(email).set({
+        'Mensagem': message, // Atualize apenas o campo 'Mensagem'
+      });
+      setState(() {
+        _userMessage = message;
       });
     } catch (e) {
       print("Error updating user message: $e");
@@ -54,6 +121,46 @@ class _LogouState extends State<Logou> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showCenterMessage(String message) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).size.height / 2 - 30, // Centro vertical
+        left: MediaQuery.of(context).size.width / 2 - 150, // Centro horizontal
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Adiciona a mensagem no overlay
+    overlay.insert(overlayEntry);
+
+    // Remove a mensagem após 2 segundos
+    Future.delayed(const Duration(seconds: 2), () {
+      overlayEntry.remove();
+    });
+  }
+
+  Widget _uploadButton(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.camera_alt,
+          size: 50, color: Colors.white), // Ícone da câmera
+      onPressed: _uploadPhoto,
     );
   }
 
@@ -112,6 +219,10 @@ class _LogouState extends State<Logou> {
 
   @override
   Widget build(BuildContext context) {
+    // Obtém o e-mail do usuário atual e extrai a parte antes do '@'
+    String email = FirebaseAuth.instance.currentUser?.email ?? 'unknown';
+    String displayName = email.split('@')[0]; // Obtém a parte antes do '@'
+
     return Scaffold(
       backgroundColor: Colors.deepPurple,
       body: SingleChildScrollView(
@@ -123,30 +234,56 @@ class _LogouState extends State<Logou> {
             children: <Widget>[
               const SizedBox(height: 20),
               Center(
-                child: Text(
-                  'Você logou ${FirebaseAuth.instance.currentUser?.email}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 30,
+                child: RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 30,
+                    ),
+                    children: [
+                      const TextSpan(
+                        text: '',
+                        style: TextStyle(color: Colors.white), // Cor padrão
+                      ),
+                      TextSpan(
+                        text: displayName, // Nome de usuário em verde
+                        style: const TextStyle(color: Colors.green),
+                      ),
+                    ],
                   ),
                 ),
               ),
+              const SizedBox(height: 30),
+              if (_userPhotoUrl.isNotEmpty)
+                Center(
+                  child: Image.network(
+                    _userPhotoUrl,
+                    height: 200,
+                    width: 200,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              const SizedBox(height: 20),
+              if (_userMessage.isNotEmpty)
+                Center(
+                  child: Text(
+                    _userMessage,
+                    style: const TextStyle(color: Colors.white, fontSize: 20),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
                   _mostrarCaixa(context);
                 },
                 child: const Text("Digitar mensagem"),
               ),
-              const Padding(
-                padding: EdgeInsets.only(
-                    top: 20.0), // Ajuste o espaçamento conforme necessário
-              ),
+              const SizedBox(height: 20),
+              _uploadButton(context),
+              const SizedBox(height: 60),
               deletar(context),
-              const Padding(
-                padding:
-                    EdgeInsets.only(top: 20.0), // Espaçamento entre os botões
-              ),
+              const SizedBox(height: 20),
               _sair(context),
             ],
           ),

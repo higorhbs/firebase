@@ -20,6 +20,15 @@ Widget _logar(BuildContext context) {
       elevation: 0,
     ),
     onPressed: () async {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
       await AuthService().logar(
         email: _emailController.text,
         password: _passwordController.text,
@@ -90,6 +99,15 @@ class _LoginPageState extends State<LoginPage> {
                   elevation: 0,
                 ),
                 onPressed: () async {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (BuildContext context) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    },
+                  );
                   await Navigator.push(
                     context,
                     PageTransition(
